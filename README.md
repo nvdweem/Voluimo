@@ -7,7 +7,7 @@ If the application is started it will automatically connect to your Nuimo (it mu
 
 As soon as the connection is established a logo will be shown on the Nuimo, followed by the current battery level. Rotating the ring will change the Windows volume.
 
-Swiping left or right will allow picking an application to control the volume for that specific application. To go back to control the Windows volume it's possible to swipe up. \
+Swiping left or right will allow picking an application to control the volume for that specific application. To go back to control the Windows volume it's possible to swipe up.
 If an application that is playing audio is focused you can swipe down to control that application without scrolling to it.
 
 Clicking the button will show the current volume. If the Nuimo has been idle for a short while it won't send rotate events anymore, clicking the button will wake it back up.
@@ -17,6 +17,9 @@ To exit the application, right click the taskbar icon.
 ## Code
 
 This project does not use the Nuimo SDK since it only works for Windows Universal apps and Windows API calls that are needed to control the volume of the separate sessions won't run in those apps.
+
+If you want to build your own C++ application that connects to a Nuimo then the Nuimo++ part of this project might be interesting. It holds everything that is needed to connect and interact with a Nuimo. It has a Nuimo::Device class that allows getting the battery percentage, device info, LED Matrix manipulation and callbacks for the events.
+The class doesn't allow picking which device to connect to if there is more than one, doesn't handle error situations very well (there are asserts around those) and doesn't do reconnecting but apart from that it seems to work quite well :).
 
 ## Building
 

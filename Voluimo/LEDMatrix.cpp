@@ -61,7 +61,7 @@ void LEDMatrix::AddToMatrix(Matrix& target, int& x, int y, const Character& c)
 			target[y + fy][x + fx] = c[fy][fx];
 		}
 	}
-	x += c[0].size();
+	x += (int)c[0].size();
 }
 
 LEDMatrix::Ticker LEDMatrix::CreateText(std::wstring text)

@@ -47,12 +47,12 @@ namespace BLE
 				MDisconnectCallback();
 			}
 		}
+		void UnregisterCallbacks();
 
 	// Member variables
 		void*               hHandle;
 	private:
 		friend struct HandleCloser;
-		void UnregisterCallbacks();
 
 		// Member variables
 		RegisteredCallbacks MCallbacks;

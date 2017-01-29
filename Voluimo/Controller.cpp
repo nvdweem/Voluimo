@@ -89,9 +89,9 @@ void Controller::StopText()
 	MPTicker.reset();
 }
 
-void Controller::SendMatrix(const LEDMatrix::Matrix& matrix, unsigned char time)
+bool Controller::SendMatrix(const LEDMatrix::Matrix& matrix, unsigned char time)
 {
-	MNuimo.LEDMatrix(matrix, true, 255, time);
+	return MNuimo.LEDMatrix(matrix, true, 255, time);
 }
 
 void Controller::OnConnected(Connected fnc)

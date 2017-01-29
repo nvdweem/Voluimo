@@ -22,7 +22,7 @@ public:
 	void ShowBattery();
 	void ShowText(std::wstring text);
 	void StopText();
-	void SendMatrix(const LEDMatrix::Matrix& matrix, unsigned char time);
+	bool SendMatrix(const LEDMatrix::Matrix& matrix, unsigned char time);
 	void OnConnected(Connected);
 	void OnIconChanged(IconChanged);
 

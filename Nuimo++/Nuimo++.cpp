@@ -13,6 +13,7 @@ GUID SDeviceInfo    = BLE::MkGuid(L"{0000180A-0000-1000-8000-00805F9B34FB}");
 GUID SLedService    = BLE::MkGuid(L"{F29B1523-CB19-40F3-BE5C-7241ECB82FD1}");
 GUID SNuimoService  = BLE::MkGuid(L"{F29B1525-CB19-40F3-BE5C-7241ECB82FD2}");
 
+GUID SBattery    = BLE::MkGuid(L"{00002A19-0000-1000-8000-00805F9B34FB}");
 GUID SRotation   = BLE::MkGuid(L"{F29B1528-CB19-40F3-BE5C-7241ECB82FD2}");
 GUID SClick      = BLE::MkGuid(L"{F29B1529-CB19-40F3-BE5C-7241ECB82FD2}");
 GUID SSwipetouch = BLE::MkGuid(L"{F29B1527-CB19-40F3-BE5C-7241ECB82FD2}");
@@ -55,6 +56,16 @@ void Nuimo::Device::Callback(void* _params)
 			MTouchCallback((Nuimo::TouchType) ValueChangedEventParameters->CharacteristicValue->Data[0]);
 		}
 	}
+	else if (params.context->CharacteristicUuid.IsShortUuid && params.context->CharacteristicUuid.Value.ShortUuid == SBattery.Data1)
+	{
+		_ASSERT(ValueChangedEventParameters->CharacteristicValue->DataSize == 1);
+		printf("Battery status changed to: %i\n", ValueChangedEventParameters->CharacteristicValue->Data[0]);
+	}
+	else
+	{
+		// What else are we listening to?
+		_ASSERT(false);
+	}
 }
 
 BLE::UID2Device& Map(void* pMap)
@@ -79,6 +90,8 @@ void Nuimo::Device::RotateCallback(Nuimo::RotateCallback cb)
 
 int Nuimo::Device::BatteryLevel()
 {
+	Info();
+
 	auto itt = Map(MPMap).find(SBatteryStatus);
 	if (itt == Map(MPMap).end())
 	{
@@ -175,27 +188,26 @@ bool Nuimo::Device::LEDMatrix(std::string& leds, bool fade, unsigned char bright
 	return Write(*itt->second.device, &itt->second.charactaristics[0], byteStr);
 }
 
-bool Nuimo::Device::AddCallbacks()
+bool Nuimo::Device::AddCallbacksFor(GUID& guid)
 {
-	MCallbackContexts.clear();
-	auto itt = Map(MPMap).find(SNuimoService);
+	auto itt = Map(MPMap).find(guid);
 	if (itt == Map(MPMap).end())
 	{
 		return false;
 	}
 
 	bool result = true;
+	itt->second.device->UnregisterCallbacks();
 	for (auto& c : itt->second.charactaristics)
 	{
-		Device& device = *this;
-
-		auto pContext = std::make_unique<UnknownContextPair>();
+		auto pContext = std::make_unique<Nuimo::Device::UnknownContextPair>();
 		pContext->first = &c;
 		pContext->second = this;
 		void* context = pContext.get();
+
 		MCallbackContexts.push_back(std::move(pContext));
 		auto func = [](BTH_LE_GATT_EVENT_TYPE EventType, PVOID EventOutParameter, PVOID Context) {
-			auto pContextPair = (std::pair<PBTH_LE_GATT_CHARACTERISTIC, Device*>*)Context;
+			auto pContextPair = (std::pair<PBTH_LE_GATT_CHARACTERISTIC, Nuimo::Device*>*)Context;
 
 			auto pParams = std::make_unique<CallbackParams>();
 			pParams->context = pContextPair->first;
@@ -206,6 +218,14 @@ bool Nuimo::Device::AddCallbacks()
 
 		result = AddCallback(*itt->second.device, &c, func, context) || result;
 	}
+	return result;
+}
+
+bool Nuimo::Device::AddCallbacks()
+{
+	MCallbackContexts.clear();
+	bool result = AddCallbacksFor(SNuimoService);
+	result = AddCallbacksFor(SBatteryStatus) && result;
 	return result;
 }
 

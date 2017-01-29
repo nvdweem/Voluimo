@@ -53,8 +53,9 @@ namespace Nuimo
 	// Device
 	class NUIMO_API Device
 	{
-		typedef std::pair<void*, void*> UnknownContextPair; // Don't want the actual types here since that would require the BLE headers
 	public:
+		typedef std::pair<void*, void*> UnknownContextPair; // Don't want the actual types here since that would require the BLE headers
+		typedef std::vector<std::unique_ptr<UnknownContextPair>> ContextPairs;
 		typedef std::function<void()>   DisconnectCallback;
 
 		Device();
@@ -75,6 +76,8 @@ namespace Nuimo
 
 	private:
 		bool AddCallbacks();
+		bool AddCallbacksFor(GUID& guid);
+
 		void Callback(void* _params);
 		void KeepAlive();
 
@@ -83,7 +86,7 @@ namespace Nuimo
 		Nuimo::ClickCallback  MClickCallback;
 		Nuimo::TouchCallback  MTouchCallback;
 		Nuimo::RotateCallback MRotateCallback;
-		std::vector<std::unique_ptr<UnknownContextPair>> MCallbackContexts;
+		ContextPairs          MCallbackContexts;
 
 		std::thread           MKeepAlive;
 		bool                  MAlive;

@@ -45,7 +45,11 @@ void NuimoTicker::Start(int speed, int callbackDelay)
 		while (MRunning)
 		{
 			auto matrix = GetMatrixFor(position);
-			MController.SendMatrix(matrix, (char)((2*(first ? 6 * MSpeed : MSpeed)) / 100));
+			if (!MController.SendMatrix(matrix, (char)((2 * (first ? 6 * MSpeed : MSpeed)) / 100)))
+			{
+				return;
+			}
+
 			if (!OKMatrix(matrix))
 			{
 				break;
@@ -69,7 +73,12 @@ void NuimoTicker::Stop()
 	if (MRunner.joinable())
 	{
 		MRunning = false;
-		MRunner.join();
+
+		// If the runner is writing to the LED matrix during a disconnect it can't be joined. It will destroy itself correctly.
+		if (MRunner.get_id() != _STD this_thread::get_id())
+		{
+			MRunner.join();
+		}
 	}
 }
 

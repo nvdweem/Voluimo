@@ -123,6 +123,7 @@ void Voluimo::InitNuimoController()
 {
 	if (MController)
 	{
+		MController->ShowBattery();
 		return;
 	}
 
@@ -140,6 +141,10 @@ void Voluimo::InitNuimoController()
 			// Initially we showed the icon of the application, but that's a bit confusing.
 			//ChangeIcon(Icon(icon));
 		}
+	});
+	MController->DisconnectCallback([]() {
+		MController.reset();
+		ChangeIcon(Icon(IDI_DISCONNECTED));
 	});
 
 	ChangeIcon(Icon(IDI_CONNECTING));

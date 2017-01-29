@@ -54,14 +54,15 @@ namespace Nuimo
 	class NUIMO_API Device
 	{
 		typedef std::pair<void*, void*> UnknownContextPair; // Don't want the actual types here since that would require the BLE headers
-
 	public:
+		typedef std::function<void()>   DisconnectCallback;
+
 		Device();
 		Device(const Device& device) = delete;
 		Device& operator=(const Device& device) = delete;
 		~Device();
 
-		bool Connect();
+		bool Connect(DisconnectCallback callback);
 		int  BatteryLevel();
 		NuimoInfo Info();
 		bool LEDMatrix(const LEDS& leds, bool fade, unsigned char brightness, unsigned char displayTime);

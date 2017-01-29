@@ -66,12 +66,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="small.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="Voluimo.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="connected.ico">
       <Filter>Resource Files</Filter>
     </Image>

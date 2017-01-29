@@ -3,6 +3,7 @@
 
 Controller::Controller()
 	: MNuimo(),
+	  MDisconnectCallback(),
 	  MDeviceService(AudioDeviceService::instance()),
     MSessionService(AudioSessionService::instance()),
 	  MDefaultDevice(),
@@ -52,7 +53,7 @@ Controller::~Controller()
 
 bool Controller::Connect()
 {
-	if (MNuimo.Connect())
+	if (MNuimo.Connect(MDisconnectCallback))
 	{
 		if (MConnected)
 		{

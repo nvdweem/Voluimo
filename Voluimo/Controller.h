@@ -26,6 +26,11 @@ public:
 	void OnConnected(Connected);
 	void OnIconChanged(IconChanged);
 
+	void DisconnectCallback(Nuimo::Device::DisconnectCallback cb)
+	{
+		MDisconnectCallback = cb;
+	}
+
 private:
 	// Operations
 	  void Init();
@@ -44,9 +49,10 @@ private:
 		void ShowNumber(int nr);
 
 	// Member variables
-	  Nuimo::Device        MNuimo;
-		AudioDeviceService&  MDeviceService;
-		AudioSessionService& MSessionService;
+	  Nuimo::Device                     MNuimo;
+		Nuimo::Device::DisconnectCallback MDisconnectCallback;
+		AudioDeviceService&               MDeviceService;
+		AudioSessionService&              MSessionService;
 
 		EarTrumpetAudioDevice MDefaultDevice;
 		EarTrumpetAudioSession MSelectedSession;

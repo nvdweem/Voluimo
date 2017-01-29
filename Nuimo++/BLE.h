@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <functional>
 
 #pragma warning(push)
 #pragma warning(disable: 4068) // Prevent Unknown pragma
@@ -28,22 +29,41 @@ namespace std
 namespace BLE
 {
 	typedef std::vector<BTH_LE_GATT_CHARACTERISTIC> Characteristics;
+	typedef std::vector<BLUETOOTH_GATT_EVENT_HANDLE> RegisteredCallbacks;
 	typedef std::unique_ptr<BTH_LE_GATT_CHARACTERISTIC_VALUE[]> BTResult;
+	typedef std::function<void()> DisconnectCallback;
 
-	struct BLEDeviceHandle
+	struct DeviceHandle
 	{
-		BLEDeviceHandle(void* in) : hHandle(in) {}
-		BLEDeviceHandle(const BLEDeviceHandle&) = delete;
-		void* hHandle;
+
+		DeviceHandle(void* in, DisconnectCallback cb) : hHandle(in), MCallbacks(), MDisconnectCallback(cb) {}
+		DeviceHandle(const DeviceHandle&) = delete;
+
+		void Disconnected()
+		{
+			UnregisterCallbacks();
+			if (MDisconnectCallback)
+			{
+				MDisconnectCallback();
+			}
+		}
+
+	// Member variables
+		void*               hHandle;
+	private:
+		friend struct HandleCloser;
+		void UnregisterCallbacks();
+
+		// Member variables
+		RegisteredCallbacks MCallbacks;
+		DisconnectCallback  MDisconnectCallback;
 	};
+
 	struct HandleCloser
 	{
-		void operator()(BLEDeviceHandle* handle)
-		{
-			CloseHandle(handle->hHandle);
-		}
+		void operator()(DeviceHandle* handle);
 	};
-	typedef std::unique_ptr<BLEDeviceHandle, HandleCloser> BLEClosingHandle;
+	typedef std::unique_ptr<DeviceHandle, HandleCloser> BLEClosingHandle;
 
 	struct DeviceCharacteristics
 	{
@@ -54,9 +74,9 @@ namespace BLE
 	typedef std::unordered_map<GUID, DeviceCharacteristics> UID2Device;
 
 
-	bool ConnectService(GUID& guid, UID2Device& target);
-	BTResult Read(BLEDeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTIC currGattChar);
-	bool Write(BLEDeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTIC currGattChar, std::string str);
-	bool AddCallback(BLEDeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTIC currGattChar, PFNBLUETOOTH_GATT_EVENT_CALLBACK callback, void* context);
+	bool ConnectService(DisconnectCallback disconnectCallback, GUID& guid, UID2Device& target);
+	BTResult Read(DeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTIC currGattChar);
+	bool Write(DeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTIC currGattChar, std::string str);
+	bool AddCallback(DeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTIC currGattChar, PFNBLUETOOTH_GATT_EVENT_CALLBACK callback, void* context);
 	GUID MkGuid(std::wstring in);
 }

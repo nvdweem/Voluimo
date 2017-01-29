@@ -123,7 +123,6 @@ bool Nuimo::Device::LEDMatrix(const LEDS& leds, bool fade, unsigned char brightn
 		return false;
 	}
 
-	int i = 0;
 	for (auto& row : leds)
 	{
 		if (row.size() != 9)
@@ -210,13 +209,13 @@ bool Nuimo::Device::AddCallbacks()
 	return result;
 }
 
-bool Nuimo::Device::Connect()
+bool Nuimo::Device::Connect(DisconnectCallback callback)
 {
 	Map(MPMap).clear();
-	if ( ConnectService(SBatteryStatus, Map(MPMap))
-		&& ConnectService(SDeviceInfo, Map(MPMap))
-		&& ConnectService(SLedService, Map(MPMap))
-		&& ConnectService(SNuimoService, Map(MPMap))
+	if ( ConnectService(callback, SBatteryStatus, Map(MPMap))
+		&& ConnectService(callback, SDeviceInfo, Map(MPMap))
+		&& ConnectService(callback, SLedService, Map(MPMap))
+		&& ConnectService(callback, SNuimoService, Map(MPMap))
 		&& AddCallbacks())
 	{
 		return true;
@@ -265,7 +264,10 @@ void Nuimo::Device::KeepAlive()
 Nuimo::Device::~Device()
 {
 	MAlive = false;
-	MKeepAlive.join();
+	if (MKeepAlive.joinable())
+	{
+		MKeepAlive.join();
+	}
 
 	delete &Map(MPMap);
 }

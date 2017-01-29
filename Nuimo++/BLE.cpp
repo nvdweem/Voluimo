@@ -17,7 +17,35 @@ GUID BLE::MkGuid(std::wstring in)
 	return AGuid;
 }
 
-bool BLE::AddCallback(BLE::BLEDeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTIC currGattChar, PFNBLUETOOTH_GATT_EVENT_CALLBACK callback, void* context)
+void OkOrDisconnected(BLE::DeviceHandle& handle, HRESULT hr)
+{
+	if (hr == HRESULT_FROM_WIN32(ERROR_DEVICE_NOT_CONNECTED))
+	{
+		handle.Disconnected();
+		return;
+	}
+	_ASSERT(hr == S_OK);
+}
+
+void BLE::HandleCloser::operator()(DeviceHandle* handle)
+{
+	handle->UnregisterCallbacks();
+	CloseHandle(handle->hHandle);
+}
+
+void BLE::DeviceHandle::UnregisterCallbacks()
+{
+	for (BLUETOOTH_GATT_EVENT_HANDLE handle : MCallbacks)
+	{
+		HRESULT hr = BluetoothGATTUnregisterEvent(
+			handle,
+			BLUETOOTH_GATT_FLAG_NONE);
+		_ASSERT(hr == S_OK);
+	}
+	MCallbacks.clear();
+}
+
+bool BLE::AddCallback(BLE::DeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTIC currGattChar, PFNBLUETOOTH_GATT_EVENT_CALLBACK callback, void* context)
 {
 	BLUETOOTH_GATT_EVENT_HANDLE EventHandle;
 	if (!currGattChar->IsNotifiable)
@@ -43,7 +71,7 @@ bool BLE::AddCallback(BLE::BLEDeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTIC 
 	return hr == S_OK;
 }
 
-BLE::BLEClosingHandle GetBLEHandle(__in GUID AGuid)
+BLE::BLEClosingHandle GetBLEHandle(BLE::DisconnectCallback callback, __in GUID AGuid)
 {
 	HDEVINFO hDI;
 	SP_DEVICE_INTERFACE_DATA did;
@@ -74,7 +102,7 @@ BLE::BLEClosingHandle GetBLEHandle(__in GUID AGuid)
 			if (!SetupDiGetDeviceInterfaceDetail(hDI, &did, pInterfaceDetailData.get(), size, &size, &dd))
 				break;
 
-			hComm.reset(new BLE::BLEDeviceHandle(
+			hComm.reset(new BLE::DeviceHandle(
 				CreateFile(
 					pInterfaceDetailData.get()->DevicePath,
 					GENERIC_WRITE | GENERIC_READ,
@@ -82,7 +110,7 @@ BLE::BLEClosingHandle GetBLEHandle(__in GUID AGuid)
 					NULL,
 					OPEN_EXISTING,
 					0,
-					NULL)
+					NULL), callback
 			));
 		}
 	}
@@ -91,7 +119,7 @@ BLE::BLEClosingHandle GetBLEHandle(__in GUID AGuid)
 	return hComm;
 }
 
-BLE::BTResult BLE::Read(BLE::BLEDeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTIC currGattChar)
+BLE::BTResult BLE::Read(BLE::DeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTIC currGattChar)
 {
 	if (!currGattChar->IsReadable)
 	{
@@ -119,12 +147,12 @@ BLE::BTResult BLE::Read(BLE::BLEDeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTI
 		pCharValueBuffer.get(),
 		NULL,
 		BLUETOOTH_GATT_FLAG_NONE);
-	_ASSERT(S_OK == hr);
+	OkOrDisconnected(handle, hr);
 
 	return pCharValueBuffer;
 }
 
-bool BLE::Write(BLE::BLEDeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTIC currGattChar, std::string str)
+bool BLE::Write(BLE::DeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTIC currGattChar, std::string str)
 {
 	if (!currGattChar->IsWritable)
 	{
@@ -147,7 +175,7 @@ bool BLE::Write(BLE::BLEDeviceHandle& handle, PBTH_LE_GATT_CHARACTERISTIC currGa
 		NULL,
 		BLUETOOTH_GATT_FLAG_NONE
 	);
-	_ASSERT(hr == S_OK);
+	OkOrDisconnected(handle, hr);
 
 	return true;
 }
@@ -176,7 +204,7 @@ bool InitDescriptors(BLE::BLEClosingHandle& hLEDevice, PBTH_LE_GATT_CHARACTERIST
 			&numDescriptors,
 			BLUETOOTH_GATT_FLAG_NONE);
 
-		_ASSERT(S_OK == hr);
+		OkOrDisconnected(*hLEDevice, hr);
 		_ASSERT(numDescriptors == descriptorBufferSize);
 
 		for (int kk = 0; kk<numDescriptors; kk++) {
@@ -202,7 +230,7 @@ bool InitDescriptors(BLE::BLEClosingHandle& hLEDevice, PBTH_LE_GATT_CHARACTERIST
 				pDescValueBuffer.get(),
 				NULL,
 				BLUETOOTH_GATT_FLAG_NONE);
-			_ASSERT(S_OK == hr);
+			OkOrDisconnected(*hLEDevice, hr);
 
 			if (currGattDescriptor->AttributeHandle < 255) {
 				BTH_LE_GATT_DESCRIPTOR_VALUE newValue;
@@ -228,9 +256,9 @@ bool InitDescriptors(BLE::BLEClosingHandle& hLEDevice, PBTH_LE_GATT_CHARACTERIST
 	return true;
 }
 
-bool BLE::ConnectService(GUID& AGuid, BLE::UID2Device& target)
+bool BLE::ConnectService(DisconnectCallback disconnectCallback, GUID& AGuid, BLE::UID2Device& target)
 {
-	BLE::BLEClosingHandle hLEDevice = GetBLEHandle(AGuid);
+	BLE::BLEClosingHandle hLEDevice = GetBLEHandle(disconnectCallback, AGuid);
 
 	// Get service count
 	USHORT serviceBufferCount;

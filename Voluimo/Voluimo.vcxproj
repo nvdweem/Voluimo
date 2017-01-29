@@ -174,8 +174,6 @@
     <Image Include="connected.ico" />
     <Image Include="connecting.ico" />
     <Image Include="disconnected.ico" />
-    <Image Include="small.ico" />
-    <Image Include="Voluimo.ico" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EarTrumpet\EarTrumpet.vcxproj">

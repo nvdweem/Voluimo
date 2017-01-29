@@ -17,6 +17,7 @@ GUID SBattery    = BLE::MkGuid(L"{00002A19-0000-1000-8000-00805F9B34FB}");
 GUID SRotation   = BLE::MkGuid(L"{F29B1528-CB19-40F3-BE5C-7241ECB82FD2}");
 GUID SClick      = BLE::MkGuid(L"{F29B1529-CB19-40F3-BE5C-7241ECB82FD2}");
 GUID SSwipetouch = BLE::MkGuid(L"{F29B1527-CB19-40F3-BE5C-7241ECB82FD2}");
+GUID SFly        = BLE::MkGuid(L"{F29B1526-CB19-40F3-BE5C-7241ECB82FD2}");
 
 struct CallbackParams
 {
@@ -61,6 +62,17 @@ void Nuimo::Device::Callback(void* _params)
 		_ASSERT(ValueChangedEventParameters->CharacteristicValue->DataSize == 1);
 		printf("Battery status changed to: %i\n", ValueChangedEventParameters->CharacteristicValue->Data[0]);
 	}
+	else if (params.context->CharacteristicUuid.Value.LongUuid == SFly)
+	{
+		_ASSERT(ValueChangedEventParameters->CharacteristicValue->DataSize == 2);
+		int type = ValueChangedEventParameters->CharacteristicValue->Data[0];
+		unsigned char value = ValueChangedEventParameters->CharacteristicValue->Data[1];
+		
+		if (MFlyCallback)
+		{
+			MFlyCallback((Nuimo::FlyType) type, value);
+		}
+	}
 	else
 	{
 		// What else are we listening to?
@@ -86,6 +98,11 @@ void Nuimo::Device::TouchCallback(Nuimo::TouchCallback cb)
 void Nuimo::Device::RotateCallback(Nuimo::RotateCallback cb)
 {
 	MRotateCallback = cb;
+}
+
+void Nuimo::Device::FlyCallback(Nuimo::FlyCallback cb)
+{
+	MFlyCallback = cb;
 }
 
 int Nuimo::Device::BatteryLevel()
@@ -247,12 +264,13 @@ bool Nuimo::Device::Connect(DisconnectCallback callback)
 
 Nuimo::Device::Device()
 	: MPMap(new BLE::UID2Device()),
-	  MClickCallback(),
+		MClickCallback(),
 		MTouchCallback(),
 		MRotateCallback(),
-	  MCallbackContexts(),
-	  MKeepAlive(),
-	  MAlive(true)
+		MFlyCallback(),
+		MCallbackContexts(),
+		MKeepAlive(),
+		MAlive(true)
 {
 	MKeepAlive = std::thread([&]() {
 		KeepAlive();

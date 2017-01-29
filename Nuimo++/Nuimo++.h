@@ -43,12 +43,21 @@ namespace Nuimo
 		EDown = 1,
 		EUp = 0
 	};
+	enum FlyType
+	{
+		ELeft = 0,
+		ERight,
+		ETowards,
+		EBackwards,
+		EUpDown
+	};
 
 	// Callbacks
-	typedef std::vector<std::vector<bool>>   LEDS;
-	typedef std::function<void(ClickType)>   ClickCallback;
-	typedef std::function<void(TouchType)>   TouchCallback;
-	typedef std::function<void(int rotated)> RotateCallback;
+	typedef std::vector<std::vector<bool>>    LEDS;
+	typedef std::function<void(ClickType)>    ClickCallback;
+	typedef std::function<void(TouchType)>    TouchCallback;
+	typedef std::function<void(int rotated)>  RotateCallback;
+	typedef std::function<void(FlyType, int)> FlyCallback;
 
 	// Device
 	class NUIMO_API Device
@@ -73,6 +82,7 @@ namespace Nuimo
 		void ClickCallback(ClickCallback cb);
 		void TouchCallback(TouchCallback cb);
 		void RotateCallback(RotateCallback cb);
+		void FlyCallback(FlyCallback cb);
 
 	private:
 		bool AddCallbacks();
@@ -86,6 +96,7 @@ namespace Nuimo
 		Nuimo::ClickCallback  MClickCallback;
 		Nuimo::TouchCallback  MTouchCallback;
 		Nuimo::RotateCallback MRotateCallback;
+		Nuimo::FlyCallback    MFlyCallback;
 		ContextPairs          MCallbackContexts;
 
 		std::thread           MKeepAlive;

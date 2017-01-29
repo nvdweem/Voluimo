@@ -16,7 +16,7 @@ Controller::Controller()
 	  MPTicker()
 {
 	MNuimo.RotateCallback([this](int volume) {
-		this->ChangeVolume(volume);
+		this->ChangeVolumeRelative(volume);
 	});
 	MNuimo.ClickCallback([this](Nuimo::ClickType type) {
 		if (type == Nuimo::ClickType::EDown)
@@ -39,6 +39,16 @@ Controller::Controller()
 		case Nuimo::TouchType::ETouchDown:
 		case Nuimo::TouchType::ESwipeDown: SelectFocussedSession(); break;
 		case Nuimo::TouchType::ESwipeUp: SelectGlobal(true); break;
+		}
+	});
+	MNuimo.FlyCallback([this](Nuimo::FlyType type, unsigned char value) {
+		switch (type)
+		{
+		case Nuimo::FlyType::ELeft:
+		case Nuimo::FlyType::ERight:     SelectSession(type == Nuimo::FlyType::ERight); break;
+		case Nuimo::FlyType::ETowards:   SelectFocussedSession(); break;
+		case Nuimo::FlyType::EBackwards: SelectGlobal(true); break;
+		case Nuimo::FlyType::EUpDown:    ChangeVolume(value); break;
 		}
 	});
 
@@ -180,7 +190,7 @@ void Controller::ShowNumber(int nr)
 }
 
 // Callbacks
-void Controller::ChangeVolume(int value)
+void Controller::ChangeVolumeRelative(int value)
 {
 	MCurrentVolume += (float)(value / 5000.0);
 	if (MCurrentVolume < 0)
@@ -192,6 +202,12 @@ void Controller::ChangeVolume(int value)
 		MCurrentVolume = 1;
 	}
 
+	SetCurrentVolume();
+}
+
+void Controller::ChangeVolume(unsigned char value)
+{
+	MCurrentVolume = (float)(value / 255.0);
 	SetCurrentVolume();
 }
 

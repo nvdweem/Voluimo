@@ -38,7 +38,8 @@ private:
 		void SelectFocussedSession();
 
   // Callbacks
-	  void ChangeVolume(int value);
+	  void ChangeVolumeRelative(int value);
+		void ChangeVolume(unsigned char value);
 		void SelectSession(bool next);
 		void SelectGlobal(bool show);
 
